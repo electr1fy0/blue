@@ -35,7 +35,7 @@ type Hub struct {
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
-		return true // allow all origins for demo
+		return true
 	},
 }
 
@@ -55,7 +55,6 @@ func (h *Hub) run() {
 		case conn := <-h.register:
 			h.clients[conn] = true
 			log.Println("Client registered")
-			// send full sync on new connection
 			h.mu.Lock()
 			fullSync := make([]Note, 0, len(h.notes))
 			for _, note := range h.notes {
@@ -128,12 +127,10 @@ func wsHandler(h *Hub, w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		// Add timestamp on server-side in case clients don't
 		if wsMsg.Type == "add" || wsMsg.Type == "edit" {
 			wsMsg.Note.UpdatedAt = time.Now()
 		}
 
-		// Broadcast received message
 		h.broadcast <- wsMsg
 	}
 }

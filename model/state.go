@@ -55,42 +55,32 @@ type Model struct {
 	state       state
 	renderCache map[string]string
 
-	// terminal dimensions
 	width  int
 	height int
 
-	// password prompt
 	pwInput  textinput.Model
 	password string
 
-	// notebook
 	nb *storage.Notebook
 
-	// list UI
 	list   list.Model
 	sortBy sortMode
 
-	// search
 	searchInput textinput.Model
 	searchTerm  string
 	allItems    []list.Item
 
-	// currently selected note for viewing
 	current     string
 	viewContent string
 
-	// confirmation dialog
 	confirmMsg    string
 	confirmAction func()
 
-	// status
 	status    string
 	lastError string
 
-	// websocket
 	ws       *websocket.Conn
 	wsStatus string
 
-	// new additions
 	showArchived bool
 }

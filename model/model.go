@@ -64,10 +64,8 @@ func renderMarkdown(md string, width int) (string, error) {
 	return out, nil
 }
 
-// as a fallback:
-
 func InitialModel() Model {
-	// password textinput
+
 	ti := textinput.New()
 	ti.Placeholder = "enter password"
 	ti.Focus()
@@ -76,7 +74,6 @@ func InitialModel() Model {
 	ti.EchoMode = textinput.EchoPassword
 	ti.EchoCharacter = '•'
 
-	// search input
 	si := textinput.New()
 	si.Placeholder = "search notes..."
 	si.CharLimit = 50
@@ -103,7 +100,7 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	// window resize handling
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -111,7 +108,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.list.SetWidth(msg.Width - 4)
 		m.list.SetHeight(msg.Height - 8)
 
-		// Re-render current note if viewing
 		if m.state == stateView && m.current != "" && m.nb != nil {
 			if note, exists := m.nb.GetNote(m.current); exists {
 				if out, err := renderWithGlow(note.Content); err == nil {
@@ -125,7 +121,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Handle websocket internal messages first
 	switch msg := msg.(type) {
 	case server.WsConnected:
 		m.ws = msg.Conn
@@ -135,21 +130,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.wsStatus = "disconnected"
 		m.lastError = msg.Err.Error()
 		m.status = "WebSocket error: " + msg.Err.Error()
-		// If connection failed, nil out the ws so writes don't attempt.
+
 		m.ws = nil
 	case server.WsMessage:
-		// Only process websocket messages if we have a notebook
+
 		if m.nb == nil {
 			return m, nil
 		}
 
-		// Attempt to parse a full-sync (array of notes) first
 		var notes []storage.Note
 		if err := json.Unmarshal(msg.Data, &notes); err == nil && len(notes) > 0 {
-			// Replace local notebook notes with server-provided notes
+
 			m.nb.Notes = make(map[string]*storage.Note, len(notes))
 			for _, n := range notes {
-				nn := n // copy
+				nn := n
 				m.nb.Notes[nn.Title] = &nn
 			}
 			m.persist()
@@ -158,7 +152,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		// Otherwise parse single WSMessage
 		var wmsg WSMessage
 		if err := json.Unmarshal(msg.Data, &wmsg); err != nil {
 			return m, nil
@@ -168,7 +161,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "add":
 			n := wmsg.Note
 			nn := n
-			// if exists, skip; else add
+
 			if _, ok := m.nb.Notes[nn.Title]; !ok {
 				m.nb.AddNote(nn)
 				m.persist()
@@ -178,7 +171,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "edit":
 			n := wmsg.Note
 			if wmsg.OldTitle != "" && wmsg.OldTitle != n.Title {
-				// remove old key if exists
+
 				delete(m.nb.Notes, wmsg.OldTitle)
 			}
 			nn := n
@@ -195,11 +188,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.status = "Remote delete: " + t
 			}
 		default:
-			// unknown type: ignore
 		}
 	}
 
-	// main state logic
 	switch m.state {
 	case statePass:
 		var cmd tea.Cmd
@@ -284,7 +275,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyMsg:
 			switch msg.String() {
 			case "ctrl+c", "q":
-				// close ws if open
 				if m.ws != nil {
 					_ = m.ws.Close()
 					m.ws = nil
@@ -343,7 +333,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.refreshList()
 				m.status = "Added note: " + title
 
-				// send to server if connected
 				if m.ws != nil {
 					wm := WSMessage{Type: "add", Note: n}
 					if err := m.ws.WriteJSON(wm); err != nil {
@@ -355,7 +344,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 			case "d":
-				// Only delete notes if really in list state
+
 				if it := m.list.SelectedItem(); it != nil {
 					name := it.(listItem).title
 					m.confirmMsg = fmt.Sprintf("Delete note '%s'? (y/N)", name)
@@ -502,7 +491,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.KeyMsg:
 			switch msg.String() {
 			case "ctrl+c", "q":
-				// close ws if open
+
 				if m.ws != nil {
 					_ = m.ws.Close()
 					m.ws = nil
@@ -549,7 +538,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				m.status = "Edited " + m.current
 
-				//  after editing, always go back to the list view
 				m.state = stateList
 				return m, tea.ClearScreen
 			case "d":
@@ -577,7 +565,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.state = stateConfirm
 			case "p":
-				// toggle pin for current
+
 				name := m.current
 				m.updateNoteMeta(name, func(meta *noteMeta) {
 					meta.Pinned = !meta.Pinned
@@ -590,7 +578,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				})
 				m.status = "Toggled favorite: " + name
 			case "t":
-				// edit tags
 				name := m.current
 				if note, ok := m.nb.GetNote(name); ok {
 					meta, _ := parseFrontMatter(note.Content)
@@ -637,7 +624,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 				}
 			case "r":
-				// archive/unarchive
 				name := m.current
 				m.updateNoteMeta(name, func(meta *noteMeta) {
 					meta.Archived = !meta.Archived
@@ -665,7 +651,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				} else {
 					m.status = "Password changed."
 				}
-				// reset pw input to masked blank for future use
+
 				pi := textinput.New()
 				pi.Placeholder = "enter password"
 				pi.Focus()
@@ -720,7 +706,6 @@ func (m Model) View() string {
 		s.WriteString(m.list.View())
 		s.WriteString("\n")
 
-		// Build help text
 		var helpParts []string
 		helpParts = append(helpParts, "a:add", "d:delete", "enter:view")
 		helpParts = append(helpParts, "/:search")
@@ -728,7 +713,7 @@ func (m Model) View() string {
 			helpParts = append(helpParts, "c:clear search")
 		}
 		helpParts = append(helpParts, "s:sort", "e:export", "g:toggle archived", "P:change password", "q:quit")
-		// quick metadata actions
+
 		helpParts = append(helpParts, "p:pin", "f:favorite", "t:tags")
 		s.WriteString(helpStyle.Render(strings.Join(helpParts, "  ")))
 

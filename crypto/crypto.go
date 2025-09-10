@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"io"
 
-	// "math/rand"
 	"crypto/rand"
 
 	"golang.org/x/crypto/pbkdf2"
