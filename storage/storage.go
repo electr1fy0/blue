@@ -1,11 +1,12 @@
 package storage
 
 import (
-	"blue/crypto"
 	"encoding/json"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/electr1fy0/blue/crypto"
 )
 
 type Note struct {

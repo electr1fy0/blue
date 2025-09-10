@@ -1,4 +1,4 @@
-module blue
+module github.com/electr1fy0/blue
 
 go 1.24.5
 
