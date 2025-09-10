@@ -47,7 +47,6 @@ func renderMarkdown(md string, width int) (string, error) {
 		width = 40
 	}
 
-	// Create glamour renderer with dark theme
 	r, err := glamour.NewTermRenderer(
 		glamour.WithAutoStyle(),
 		glamour.WithWordWrap(width-4),
@@ -65,7 +64,6 @@ func renderMarkdown(md string, width int) (string, error) {
 }
 
 func InitialModel() Model {
-
 	ti := textinput.New()
 	ti.Placeholder = "enter password"
 	ti.Focus()

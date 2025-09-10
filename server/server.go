@@ -10,20 +10,17 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// Note represents a simple note structure.
 type Note struct {
 	Title     string    `json:"title"`
 	Content   string    `json:"content"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// WSMessage represents message types between client and server.
 type WSMessage struct {
 	Type string `json:"type"` // "sync", "add", "edit", "delete"
 	Note *Note  `json:"note,omitempty"`
 }
 
-// Hub maintains active clients and shared notes
 type Hub struct {
 	clients    map[*websocket.Conn]bool
 	notes      map[string]Note
@@ -65,7 +62,7 @@ func (h *Hub) run() {
 				Type: "full_sync",
 			}
 			data, _ := json.Marshal(fullSync)
-			// Send full sync message as raw JSON array to client
+
 			conn.WriteMessage(websocket.TextMessage, data)
 			_ = conn.WriteJSON(msg)
 		case conn := <-h.unregister:
@@ -75,11 +72,9 @@ func (h *Hub) run() {
 				log.Println("Client unregistered")
 			}
 		case message := <-h.broadcast:
-			// Update shared notes map accordingly
 			h.mu.Lock()
 			switch message.Type {
 			case "add", "edit":
-				// Update note if newer or new title
 				current, exists := h.notes[message.Note.Title]
 				if !exists || message.Note.UpdatedAt.After(current.UpdatedAt) {
 					h.notes[message.Note.Title] = *message.Note
@@ -89,7 +84,6 @@ func (h *Hub) run() {
 			}
 			h.mu.Unlock()
 
-			// Broadcast updated message to all clients except sender
 			for c := range h.clients {
 				err := c.WriteJSON(message)
 				if err != nil {
