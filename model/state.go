@@ -52,7 +52,8 @@ type WSMessage struct {
 }
 
 type Model struct {
-	state state
+	state       state
+	renderCache map[string]string
 
 	// terminal dimensions
 	width  int

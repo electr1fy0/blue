@@ -52,3 +52,35 @@ func renderWithGlow(md string) (string, error) {
 	}
 	return buf.String(), nil
 }
+
+// // Put this function right after the renderMarkdown function (around line 60-70)
+// func (m *Model) renderNoteContent(content string) string {
+// 	// Try renderWithGlow with timeout
+// 	glowChan := make(chan string, 1)
+// 	errChan := make(chan error, 1)
+
+// 	go func() {
+// 		if out, err := renderWithGlow(content); err == nil {
+// 			glowChan <- out
+// 		} else {
+// 			errChan <- err
+// 		}
+// 	}()
+
+// 	select {
+// 	case rendered := <-glowChan:
+// 		return rendered
+// 	case <-errChan:
+// 		// Fall through to markdown fallback
+// 	case <-time.After(500 * time.Millisecond): // 500ms timeout
+// 		// Glow is taking too long, use fallback
+// 	}
+
+// 	// Fallback to glamour markdown
+// 	if out, err := renderMarkdown(content, m.width); err == nil {
+// 		return out
+// 	}
+
+// 	// Final fallback
+// 	return renderMarkdownToANSI(content, m.width)
+// }

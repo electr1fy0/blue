@@ -322,7 +322,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				title := extractTitle(content)
 
-				// Check for duplicate titles
 				originalTitle := title
 				counter := 1
 				for {
@@ -516,16 +515,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if !exists {
 					m.status = "Note not found: " + m.current
 					m.state = stateList
-					break
+					return m, tea.ClearScreen
 				}
+
 				content, err := utils.OpenEditorWithContent(note.Content)
 				if err != nil {
 					m.status = "Editor failed: " + err.Error()
 					m.lastError = err.Error()
-					break
+					return m, tea.ClearScreen
 				}
 
-				// Update note
 				oldTitle := note.Title
 				note.Content = content
 				note.UpdatedAt = time.Now()
@@ -543,28 +542,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.persist()
 				m.refreshList()
 
-				if rendered, err := renderMarkdown(note.Content, m.width); err == nil {
-					m.viewContent = rendered
-				} else {
-					m.viewContent = "Error rendering markdown: " + err.Error()
+				if m.width > 0 && m.height > 0 {
+					m.list.SetWidth(m.width - 4)
+					m.list.SetHeight(m.height - 8)
 				}
+
 				m.status = "Edited " + m.current
 
-				// send edit to server
-				if m.ws != nil {
-					wm := WSMessage{
-						Type:     "edit",
-						Note:     note,
-						OldTitle: oldTitle,
-					}
-					if err := m.ws.WriteJSON(wm); err != nil {
-						m.lastError = err.Error()
-						m.status = "WS write failed: " + err.Error()
-						_ = m.ws.Close()
-						m.ws = nil
-						m.wsStatus = "disconnected"
-					}
-				}
+				//  after editing, always go back to the list view
+				m.state = stateList
+				return m, tea.ClearScreen
 			case "d":
 				// Only allow delete when in view mode
 				m.confirmMsg = fmt.Sprintf("Delete note '%s'? (y/N)", m.current)
@@ -634,7 +621,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 							note.UpdatedAt = time.Now()
 							m.persist()
 							m.refreshList()
+
+							if m.width > 0 && m.height > 0 {
+								m.list.SetWidth(m.width - 4)
+								m.list.SetHeight(m.height - 8)
+							}
+							if rendered, err := renderMarkdown(note.Content, m.width); err == nil {
+								m.viewContent = rendered
+							} else {
+								m.viewContent = "Error rendering markdown: " + err.Error()
+							}
 							m.status = "Updated tags for " + name
+							return m, tea.ClearScreen
 						}
 					}
 				}

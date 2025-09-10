@@ -3,12 +3,12 @@ package utils
 import (
 	"os"
 	"os/exec"
+	"syscall"
 )
 
 func OpenEditorWithContent(initial string) (string, error) {
 	ed := os.Getenv("EDITOR")
 	if ed == "" {
-		// prefer nvim if available
 		if p, err := exec.LookPath("nvim"); err == nil {
 			ed = p
 		} else if p, err := exec.LookPath("vi"); err == nil {
@@ -36,10 +36,16 @@ func OpenEditorWithContent(initial string) (string, error) {
 	}
 
 	cmd := exec.Command(ed, tmpName)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 
+	if fd, err := syscall.Dup(int(os.Stdin.Fd())); err == nil {
+		cmd.Stdin = os.NewFile(uintptr(fd), "/dev/stdin")
+	}
+	if fd, err := syscall.Dup(int(os.Stdout.Fd())); err == nil {
+		cmd.Stdout = os.NewFile(uintptr(fd), "/dev/stdout")
+	}
+	if fd, err := syscall.Dup(int(os.Stderr.Fd())); err == nil {
+		cmd.Stderr = os.NewFile(uintptr(fd), "/dev/stderr")
+	}
 	if err := cmd.Run(); err != nil {
 		return "", err
 	}
