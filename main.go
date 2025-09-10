@@ -8,39 +8,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/electr1fy0/blue/model"
 	"github.com/electr1fy0/blue/server"
-	"github.com/electr1fy0/blue/storage"
 
 	"github.com/gorilla/websocket"
 	"golang.org/x/term"
 )
-
-// changes i made:
-// created a pointer
-// switched to splitseq
-
-// css stuff
-
-// listItem adapts a storage.Note to the bubbles/list.Item interface
-// bubbles/list requires this struct to display a list
-
-// metadata embedded in front matter
-
-// WS message structure used on the wire
-type WSMessage struct {
-	Type     string        `json:"type"`
-	Note     *storage.Note `json:"note,omitempty"`
-	OldTitle string        `json:"old_title,omitempty"`
-}
-
-// Save notebook and set status
-
-// Extract title from content (
-
-// Export all notes to directory
-
-// Change notebook password: save notebook with newPassword
-
-// ----------------- WebSocket helper messages (internal) -----------------
 
 func main() {
 	// Check if we have a proper terminal using golang.org/x/term

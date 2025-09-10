@@ -43,3 +43,13 @@ func (m *Model) exportNotes() error {
 	m.status = fmt.Sprintf("Exported %d notes to %s/", count, exportDir)
 	return nil
 }
+
+func (m *Model) persist() {
+	if err := storage.SaveNotebook(m.nb, m.password); err != nil {
+		m.status = "Failed to save: " + err.Error()
+		m.lastError = err.Error()
+		return
+	}
+	m.status = "Saved."
+	m.lastError = ""
+}
