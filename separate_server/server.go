@@ -1,4 +1,7 @@
-package server
+// This is separate from the rest of the project
+// Run it independently to enable real time note syncing
+
+package main
 
 import (
 	"encoding/json"
